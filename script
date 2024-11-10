@@ -1,0 +1,106 @@
+import pygame
+import random
+import sys
+
+pygame.init()
+
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+pygame.display.set_caption("Riddled House")
+font = pygame.font.Font(None, 24)
+
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+player_pos = [100, 100]
+player_size = 50
+room_count = 5
+hidden_rooms = []
+riddles = [
+    "Where shadows fall, I rise.",
+    "What has keys but can't open locks?",
+    "What starts with an E, ends with an E, but only contains one letter?",
+    "What is always coming but never arrives?",
+    "What is black and white and read all over?"
+]
+answers = ["sun", "piano", "envelope", "tomorrow", "newspaper"]
+
+for i in range(room_count):
+    x = random.randint(0, SCREEN_WIDTH - player_size)
+    y = random.randint(0, SCREEN_HEIGHT - player_size)
+    hidden_rooms.append((x, y, riddles[i], answers[i]))
+
+clock = pygame.time.Clock()
+
+#Game variables
+game_over = False
+won = False
+current_room = None
+answer_input = ""
+
+
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE and current_room:
+                if answer_input.lower() == current_room[3].lower():
+                    hidden_rooms.remove(current_room)
+                    current_room = None
+                    answer_input = ""
+                    print("Room opened!")
+                else:
+                    print("Incorrect answer.")
+                    answer_input = ""
+            elif event.key == pygame.K_BACKSPACE and current_room:
+                answer_input = answer_input[:-1]
+            elif event.unicode and current_room:
+                answer_input += event.unicode
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_UP]:
+        player_pos[1] = max(0, player_pos[1] - 5)
+    if keys[pygame.K_DOWN]:
+        player_pos[1] = min(SCREEN_HEIGHT - player_size, player_pos[1] + 5)
+    if keys[pygame.K_LEFT]:
+        player_pos[0] = max(0, player_pos[0] - 5)
+    if keys[pygame.K_RIGHT]:
+        player_pos[0] = min(SCREEN_WIDTH - player_size, player_pos[0] + 5)
+
+    screen.fill(WHITE)
+
+    for room in hidden_rooms:
+        pygame.draw.rect(screen, BLACK, (room[0], room[1], player_size, player_size), 1)
+        if (abs(player_pos[0] - room[0]) < player_size) and (abs(player_pos[1] - room[1]) < player_size):
+            current_room = room
+            text = font.render(room[2], True, BLACK)
+            screen.blit(text, (100, 100))
+            text = font.render(answer_input, True, BLACK)
+            screen.blit(text, (100, 150))
+
+    pygame.draw.rect(screen, BLACK, (player_pos[0], player_pos[1], player_size, player_size))
+
+    if not hidden_rooms:
+        won = True
+
+    if won:
+        text = font.render("""You won!
+                              THIS IS NOT THE MAIN ENTRY """, True, BLACK)
+        screen.blit(text, (100, 100))
+        pygame.display.flip()
+        pygame.time.wait(2000)
+        break
+
+    if game_over:
+        text = font.render("Game Over", True, BLACK)
+        screen.blit(text, (100, 100))
+        pygame.display.flip()
+        pygame.time.wait(2000)
+        break
+
+    pygame.display.flip()
+    clock.tick(60)
